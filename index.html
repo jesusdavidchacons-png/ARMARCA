@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR Experience - Mejor Unidos</title>
+    
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #000; }
+        
+        /* Pantalla de Bienvenida (Necesaria para audio en iPhone/Android) */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+            color: white; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 10;
+            text-align: center; transition: opacity 0.5s;
+        }
+
+        .btn-start {
+            padding: 15px 40px; font-size: 1.2rem; background: #007bff;
+            color: white; border: none; border-radius: 30px;
+            cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+            margin-top: 20px; text-transform: uppercase;
+        }
+
+        /* Indicador visual de escaneo */
+        #scanning-ui {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.7); color: white; padding: 10px 25px;
+            border-radius: 20px; z-index: 5; display: none;
+            border: 1px solid #007bff; pointer-events: none;
+        }
+
+        .logo-placeholder { width: 80px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="overlay">
+        <div class="logo-placeholder">📱</div>
+        <h2>Experiencia de Realidad Aumentada</h2>
+        <p>Presiona el botón y apunta tu cámara <br> hacia la tarjeta de presentación.</p>
+        <button class="btn-start" id="startBtn">Iniciar Cámara</button>
+    </div>
+
+    <div id="scanning-ui">Buscando tarjeta...</div>
+
+    <a-scene 
+        mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: #scanning-ui;" 
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false">
+        
+        <a-assets>
+            <video id="promoVideo" src="./video.mp4" 
+                webkit-playsinline playsinline loop 
+                crossorigin="anonymous">
+            </video>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity id="ar-target" mindar-image-target="targetIndex: 0">
+            <a-video src="#promoVideo" position="0 0 0" width="1" height="0.6" rotation="0 0 0"></a-video>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const overlay = document.getElementById('overlay');
+        const scanningUi = document.getElementById('scanning-ui');
+        const sceneEl = document.querySelector('a-scene');
+        const video = document.getElementById('promoVideo');
+        const arTarget = document.getElementById('ar-target');
+
+        // Al hacer clic, activamos cámara y permitimos audio
+        startBtn.addEventListener('click', () => {
+            overlay.style.opacity = '0';
+            setTimeout(() => { 
+                overlay.style.display = 'none';
+                scanningUi.style.display = 'block';
+            }, 500);
+            
+            // Iniciamos el motor AR
+            sceneEl.systems['mindar-image-system'].start();
+        });
+
+        // Control del video cuando aparece/desaparece la tarjeta
+        arTarget.addEventListener("targetFound", () => {
+            video.play();
+            scanningUi.style.display = 'none';
+        });
+
+        arTarget.addEventListener("targetLost", () => {
+            video.pause();
+            scanningUi.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
